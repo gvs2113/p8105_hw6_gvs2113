@@ -1,0 +1,70 @@
+---
+title: "P8105 Homework 6 - UNI: gvs2113"
+output: github_document
+date: "2023-11-20"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## Problem 1 
+**Load in the data from github link:** 
+```{r}
+url = "https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv"
+homicide_html = read_csv(url)
+```
+
+**Creating a `city_state` variable and performing instructed data cleaning steps.**
+```{r}
+homicide_df = 
+  homicide_html |> 
+  mutate(
+    city_state = paste(city, state, sep = ", "),
+    resolution = case_when(
+      disposition == "Closed without arrest" ~ 1,
+      disposition == "Open/No arrest"        ~ 1,
+      disposition == "Closed by arrest"      ~ 2))|> 
+  filter(!(city_state %in% c("Dallas, TX", "Pheonix, AZ", "Kansas City, MO", "Tulsa, AL"))) |> 
+  filter(victim_race %in% c("White", "Black")) |> 
+  mutate(
+    victim_age = replace(victim_age, victim_age == "Unknown", NA),
+    victim_age = as.numeric(victim_age)
+  )
+```
+
+Baltimore, MD logisitic regression 
+```{r}
+baltimore = 
+  homicide_df |> 
+  filter(city_state == "Baltimore, MD")
+
+b_fit = glm(resolution ~ victim_age + victim_sex + victim_race, data = baltimore) |> 
+  broom::tidy() |> 
+  mutate(OR = exp(estimate)) |>
+  select(term, log_OR = estimate, OR, p.value) |> 
+  knitr::kable(digits = 3)
+```
+
+unsure how to get CI
+
+
+
+
+
