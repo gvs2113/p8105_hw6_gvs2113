@@ -38,9 +38,9 @@ homicide_df =
   mutate(
     city_state = paste(city, state, sep = ", "),
     resolution = case_when(
-      disposition == "Closed without arrest" ~ 1,
-      disposition == "Open/No arrest"        ~ 1,
-      disposition == "Closed by arrest"      ~ 2))|> 
+      disposition == "Closed without arrest" ~ 0,
+      disposition == "Open/No arrest"        ~ 0,
+      disposition == "Closed by arrest"      ~ 1))|> 
   filter(!(city_state %in% c("Dallas, TX", "Pheonix, AZ", "Kansas City, MO", "Tulsa, AL"))) |> 
   filter(victim_race %in% c("White", "Black")) |> 
   mutate(
@@ -49,7 +49,7 @@ homicide_df =
   )
 ```
 
-Baltimore, MD logisitic regression 
+**Baltimore, MD logisitic regression**
 ```{r}
 baltimore = 
   homicide_df |> 
@@ -57,13 +57,50 @@ baltimore =
 
 b_fit = glm(resolution ~ victim_age + victim_sex + victim_race, data = baltimore) |> 
   broom::tidy() |> 
-  mutate(OR = exp(estimate)) |>
-  select(term, log_OR = estimate, OR, p.value) |> 
+  mutate(
+    OR = exp(estimate),
+    OR_CI_upper = exp(estimate + 1.96 * std.error),
+    OR_CI_lower = exp(estimate - 1.96 * std.error)) |>
+  filter(term == "victim_sexMale") |> 
+  select(OR, OR_CI_upper, OR_CI_lower) 
+
+b_fit |> 
   knitr::kable(digits = 3)
 ```
 
-unsure how to get CI
+**Logistic Regression for all cities**
+```{r}
+all_city = 
+  homicide_df |> 
+  nest(data = -city_state) |> 
+  mutate(
+    model_map = map(data, \(df) glm(resolution ~ victim_age + victim_sex + victim_race, family = binomial(), data = df)),
+    tidy_model = map(model_map, broom::tidy)) |> 
+  select( -model_map, -data) |> 
+  unnest(cols = tidy_model) |> 
+  mutate(
+    OR = exp(estimate),
+    OR_CI_upper = exp(estimate + 1.96 * std.error),
+    OR_CI_lower = exp(estimate - 1.96 * std.error)) |>
+  filter(term == "victim_sexMale") |> 
+  select(city_state, OR, OR_CI_upper, OR_CI_lower) 
 
+all_city |> 
+  head(10) |> 
+  knitr::kable(digits = 3)
+```
+
+**Plot for OR and CI for each city**
+```{r}
+all_city |> 
+  mutate(city_state = fct_reorder(city_state, OR)) |> 
+  ggplot(aes(x = city_state, y = OR)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = OR_CI_lower, ymax = OR_CI_upper)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Need to add comments
 
 ## Problem 2 
 **Load in the data:** 
