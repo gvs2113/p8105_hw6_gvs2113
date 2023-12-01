@@ -1,7 +1,7 @@
 ---
 title: "P8105 Homework 6 - UNI: gvs2113"
 output: github_document
-date: "2023-11-20"
+date: "2023-12-01"
 ---
 
 ```{r setup, include=FALSE}
@@ -250,57 +250,26 @@ model_0|>
 It is hypothesized that the variables that assess the mother's physical condition at time of delivery may impact the resulting birth weight of the baby. Thus, the above linear regression model assess the influence of the only two variables that are acquired at the time of delivery: the mother's age and weight. 
 
 **Predictors and Residuals** 
+
 ```{r}
-birth_data |> 
+res_pred_bwd = 
+  birth_data |> 
   modelr::add_residuals(model_0) |> 
-  ggplot(aes(x = momage, y = resid)) + geom_point() + 
+  modelr::add_predictions(model_0)
+  
+  
+  ggplot(data = res_pred_bwd, aes(x = pred, y = resid)) + geom_point() + 
+    geom_hline(yintercept = 0, color = "red") +
   labs(
-    title = "Model 0 Residuals of `momage` Variable",
-    x = "Mother's Age at Delivery",
+    title = "Model 0 Residuals vs. Predictions",
+    x = "Predictions",
     y = "Residuals"
   )
 ```
 
-Since age is a distinct numeric variable, the scatter plot is organized on vertical lines which represent whole age numbers. There is a wide spread of residuals between 15-25 years old and then the spread narrows and becomes more sparse after 30 years old. 
+The above plot shows the distribution of residuals vs. prediction values for the hypothesized birthwieght linear regression model (Model 0). There is a large concentration of values around the y=0 intercept line and radiating out in a circular distribution around the prediction value of 3150. There is more spread for negative residuals and one large outlier among the predictions with a value of around 4750. 
 
-```{r}
-birth_data |> 
-  modelr::add_residuals(model_0) |> 
-  ggplot(aes(x = delwt, y = resid)) + geom_point() + 
-  labs(
-    title = "Model 0 Residuals of `delwt` Variable",
-    x = "Mother's Weight at Delivery",
-    y = "Residuals"
-  )
-```
-
-Since weight is a continuous numeric variable, the scatter plot is less structured than the one above. The largest density and spread of residuals is between 100 and 200 lbs and then becomes more sparse and mostly negative residuals after 200 lbs. 
-
-```{r}
-birth_data |>   
-  modelr::add_predictions(model_0) |>
-  ggplot(aes(x = momage, y = pred)) + geom_point() + 
-  labs(
-    title = "Model 0 Predictions of `momage` Variable",
-    x = "Mother's Age at Delivery",
-    y = "Predictions"
-  )
-```
-
-Since we are again assessing the age variable, this scatter plot is structured along vertical lines for each whole number age. The predictions trend upward as mothers age increases, but also decreases in density and spread. All predictions remain under 4000 except for one outlier point at 23 years old with a predicted value of around 4750. 
-
-```{r}
-birth_data |>   
-  modelr::add_predictions(model_0) |>
-  ggplot(aes(x = delwt, y = pred)) + geom_point() + 
-  labs(
-    title = "Model 0 Predictions of `delwt` Variable",
-    x = "Mother's Weight at Delivery",
-    y = "Predictions"
-  )
-```
-
-The predicitions for mother's delivery weight shows a strong positive linear relationship. Like the plot directly above, the density and spread of the predictions decrease as the x-axis (weight) variable increases. Also, this plot is consistent with the residuals since it also has the largest density and spread between 100-200 lbs. The two points with the highest predicted value seem to be outliers. 
+ 
 
 **Other models to compare** 
 ```{r}
